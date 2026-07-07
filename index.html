@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Harmonogram projektu — DigiDay</title>
+    <style>
+        :root {
+            --primary: #0f172a;
+            --accent: #3b82f6;
+            --border: #e2e8f0;
+            --bg: #f1f5f9;
+            --card: #ffffff;
+            --text: #1e293b;
+            --muted: #64748b;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; }
+
+        .topbar { background: var(--primary); color: white; padding: 13px 24px; display: flex; align-items: baseline; gap: 12px; }
+        .topbar-title { font-size: 15px; font-weight: 600; }
+        .topbar-sub { font-size: 12px; opacity: .45; }
+
+        .container { max-width: 860px; margin: 0 auto; padding: 24px 16px; }
+
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 16px; }
+        .card-head { padding: 11px 20px; border-bottom: 1px solid var(--border); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); display: flex; align-items: center; justify-content: space-between; }
+        .card-body { padding: 20px; }
+
+        .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+        .span2 { grid-column: 1 / -1; }
+
+        .field { display: flex; flex-direction: column; gap: 5px; }
+        .field label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; }
+        .field input, .field textarea {
+            border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px;
+            font: inherit; color: var(--text); background: white; width: 100%;
+            transition: border-color .15s, box-shadow .15s;
+        }
+        .field input:focus, .field textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59,130,246,.12); }
+
+        .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border: 1px solid transparent; border-radius: 6px; cursor: pointer; font: 600 13px inherit; transition: all .15s; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: #1e293b; }
+        .btn-ghost { background: white; color: var(--text); border-color: var(--border); }
+        .btn-ghost:hover { background: #f8fafc; }
+        .btn-danger { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
+        .btn-danger:hover { background: #fee2e2; }
+        .btn-cta { background: var(--accent); color: white; border-color: var(--accent); padding: 11px 28px; font-size: 14px; border-radius: 8px; }
+        .btn-cta:hover { background: #2563eb; }
+        .btn-sm { padding: 4px 10px; font-size: 12px; }
+
+        /* deadline preview strip */
+        .deadline-strip {
+            background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px;
+            padding: 12px 16px; display: flex; align-items: center; gap: 16px;
+            font-size: 13px; color: #15803d; flex-wrap: wrap;
+        }
+        .deadline-strip strong { font-size: 15px; }
+        .deadline-strip .warn { color: #b91c1c; background: #fef2f2; border-color: #fca5a5; }
+
+        /* timeline preview in form */
+        .tl { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+        .tl-row { display: grid; grid-template-columns: 24px 1fr auto; gap: 0; align-items: stretch; }
+        .tl-row + .tl-row { border-top: 1px solid var(--border); }
+        .tl-dot { display: flex; flex-direction: column; align-items: center; padding: 14px 0; background: #f8fafc; border-right: 1px solid var(--border); }
+        .tl-dot-circle { width: 10px; height: 10px; border-radius: 50%; background: var(--primary); flex-shrink: 0; margin-top: 3px; }
+        .tl-dot-line { flex: 1; width: 2px; background: var(--border); margin-top: 4px; }
+        .tl-row:last-child .tl-dot-line { display: none; }
+        .tl-content { padding: 10px 14px; }
+        .tl-label { font-weight: 600; font-size: 13px; }
+        .tl-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+        .tl-date { padding: 10px 14px; font-size: 13px; font-weight: 600; color: var(--primary); white-space: nowrap; display: flex; align-items: center; }
+        .tl-row.tl-client { background: #fffbeb; }
+        .tl-row.tl-client .tl-dot { background: #fef9c3; }
+        .tl-row.tl-client .tl-dot-circle { background: #f59e0b; }
+        .tl-row.tl-final .tl-dot-circle { background: #22c55e; }
+
+        /* feedback response inputs */
+        .fb-inputs { background: #fffbeb; border-top: 1px solid #fde68a; padding: 14px 20px; }
+        .fb-inputs-title { font-size: 11px; font-weight: 700; color: #92400e; text-transform: uppercase; letter-spacing: .4px; margin-bottom: 12px; }
+        .fb-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+
+        .chk-label { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; font-weight: 500; user-select: none; }
+        .chk-label input[type="checkbox"] { width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer; }
+
+        .bottom-bar { display: flex; align-items: center; gap: 10px; padding-top: 4px; }
+
+        /* advanced section */
+        .adv-toggle { font-size: 12px; color: var(--accent); cursor: pointer; text-decoration: underline; background: none; border: none; padding: 0; font-family: inherit; }
+        .adv-section { display: none; margin-top: 14px; }
+        .adv-section.open { display: block; }
+        .phase-item { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; overflow: hidden; }
+        .phase-item:last-child { margin-bottom: 0; }
+        .phase-head { padding: 8px 12px; background: #f8fafc; display: flex; align-items: center; gap: 8px; }
+        .phase-num { width: 20px; height: 20px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+        .phase-name-input { flex: 1; border: none !important; background: transparent !important; font-size: 13px !important; font-weight: 600 !important; padding: 2px 6px !important; box-shadow: none !important; outline: none; }
+        .phase-body { padding: 12px; }
+        .fb-block { margin-top: 10px; padding: 10px 12px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; }
+        .fb-title { font-size: 11px; font-weight: 700; color: #92400e; margin-bottom: 8px; text-transform: uppercase; letter-spacing: .4px; }
+
+        /* ── OUTPUT ── */
+        #output { display: none; }
+        .doc { background: white; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+        .doc-top { background: var(--primary); color: white; padding: 26px 36px 20px; }
+        .doc-brand { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; opacity: .45; margin-bottom: 8px; }
+        .doc-label { font-size: 10px; text-transform: uppercase; letter-spacing: .8px; opacity: .55; margin-bottom: 3px; }
+        .doc-project { font-size: 21px; font-weight: 700; margin-bottom: 3px; }
+        .doc-client { font-size: 13px; opacity: .65; }
+        .doc-metabar { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid var(--border); }
+        .doc-metacell { padding: 12px 20px; border-right: 1px solid var(--border); }
+        .doc-metacell:last-child { border-right: none; }
+        .doc-metacell .lbl { font-size: 10px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); margin-bottom: 2px; }
+        .doc-metacell .val { font-size: 13px; font-weight: 600; }
+        .doc-body { padding: 22px 36px; }
+        .sec { margin-bottom: 26px; }
+        .sec-title { font-size: 10px; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); font-weight: 700; padding-bottom: 7px; border-bottom: 1px solid var(--border); margin-bottom: 13px; }
+        .terminy { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .termin-box { border: 1px solid var(--border); border-radius: 8px; padding: 13px 15px; text-align: center; }
+        .termin-box .lbl { font-size: 10px; text-transform: uppercase; letter-spacing: .4px; color: var(--muted); margin-bottom: 4px; }
+        .termin-box .val { font-size: 17px; font-weight: 700; }
+        .termin-box.red { border-color: #fca5a5; background: #fef2f2; }
+        .termin-box.red .val { color: #b91c1c; }
+        .termin-box.green { border-color: #86efac; background: #f0fdf4; }
+        .termin-box.green .val { color: #15803d; }
+        .doc-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .doc-table th { background: var(--primary); color: white; padding: 9px 12px; text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .3px; }
+        .doc-table td { padding: 9px 12px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+        .doc-table tr:last-child td { border-bottom: none; }
+        .row-phase { background: white; }
+        .row-fb { background: #fffbeb; }
+        .row-resp { background: #fffbeb; }
+        .chip { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+        .chip-phase { background: #e0e7ff; color: #3730a3; }
+        .chip-fb { background: #fef3c7; color: #92400e; }
+        .chip-k1 { background: #fce7f3; color: #9d174d; }
+        .chip-k2 { background: #ede9fe; color: #6d28d9; }
+        .chip-final { background: #d1fae5; color: #065f46; }
+        .chip-delay { background: #fee2e2; color: #b91c1c; }
+        .chip-ok { background: #dcfce7; color: #15803d; }
+        .chip-wait { background: #f1f5f9; color: #64748b; }
+        .cond-box { background: #f8fafc; border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; font-size: 13px; line-height: 1.65; color: #374151; }
+        .cond-box p + p { margin-top: 8px; }
+        .sig-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; margin-top: 32px; }
+        .sig-box { border-top: 1px solid #aaa; padding-top: 8px; font-size: 12px; color: var(--muted); }
+        .sig-name { font-weight: 600; color: var(--text); font-size: 13px; margin-bottom: 3px; }
+
+        @media print {
+            @page { size: A4 portrait; margin: 10mm 12mm; }
+            body { background: white !important; font-size: 11px !important; }
+            .topbar, #generator, .no-print { display: none !important; }
+            #output { display: block !important; padding: 0 !important; margin: 0 !important; }
+            .container { max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
+            .doc { border: none !important; border-radius: 0 !important; }
+            .doc-top { padding: 14px 20px 10px !important; }
+            .doc-brand { font-size: 8px !important; margin-bottom: 3px !important; }
+            .doc-label { font-size: 8px !important; margin-bottom: 2px !important; }
+            .doc-project { font-size: 16px !important; margin-bottom: 2px !important; }
+            .doc-client { font-size: 11px !important; }
+            .doc-metacell { padding: 7px 14px !important; }
+            .doc-metacell .lbl { font-size: 8px !important; }
+            .doc-metacell .val { font-size: 11px !important; }
+            .doc-body { padding: 12px 20px !important; }
+            .sec { margin-bottom: 12px !important; }
+            .sec-title { font-size: 8px !important; padding-bottom: 4px !important; margin-bottom: 8px !important; }
+            .terminy { gap: 8px !important; }
+            .termin-box { padding: 8px 10px !important; border-radius: 6px !important; }
+            .termin-box .lbl { font-size: 8px !important; margin-bottom: 2px !important; }
+            .termin-box .val { font-size: 14px !important; }
+            .doc-table { font-size: 10px !important; }
+            .doc-table th { padding: 6px 10px !important; font-size: 8px !important; }
+            .doc-table td { padding: 5px 10px !important; }
+            .chip { font-size: 8px !important; padding: 1px 6px !important; }
+            .cond-box { padding: 9px 12px !important; font-size: 9px !important; line-height: 1.5 !important; }
+            .cond-box p + p { margin-top: 5px !important; }
+            .sig-grid { margin-top: 16px !important; gap: 28px !important; }
+            .sig-box { font-size: 10px !important; padding-top: 6px !important; }
+            .sig-name { font-size: 11px !important; margin-bottom: 2px !important; }
+            .doc-top, .doc-table th { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            .terminy .red, .terminy .green, .cond-box, .row-fb, .row-resp { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        }
+        @media (max-width: 680px) {
+            .g2, .g3, .fb-grid { grid-template-columns: 1fr; }
+            .span2 { grid-column: auto; }
+            .doc-metabar, .terminy, .sig-grid { grid-template-columns: 1fr; }
+            .doc-metacell { border-right: none; border-bottom: 1px solid var(--border); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="topbar no-print">
+    <div class="topbar-title">Harmonogram projektu</div>
+    <div class="topbar-sub">DigiDay s.r.o. — 60-denní struktura</div>
+</div>
+
+<!-- FORM -->
+<div id="generator" class="container">
+
+    <div class="card">
+        <div class="card-head">Základní informace o projektu</div>
+        <div class="card-body">
+            <div class="g2">
+                <div class="field">
+                    <label>Název projektu</label>
+                    <input type="text" id="f-name" placeholder="např. QARO web — Obec Nová Ves">
+                </div>
+                <div class="field">
+                    <label>Klient</label>
+                    <input type="text" id="f-client" placeholder="např. Obec Nová Ves">
+                </div>
+                <div class="field">
+                    <label>Datum podpisu smlouvy</label>
+                    <input type="date" id="f-start" onchange="onSigningDateChange()">
+                </div>
+                <div class="field">
+                    <label>Plánovaný termín odevzdání <span style="font-weight:400;text-transform:none;letter-spacing:0">(auto: podpis + 60 dní)</span></label>
+                    <input type="date" id="f-end">
+                </div>
+                <div class="field span2">
+                    <label>Poznámka (volitelné)</label>
+                    <textarea id="f-note" rows="2" placeholder="Doplňující informace..."></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Timeline preview -->
+    <div class="card">
+        <div class="card-head">Harmonogram — přehled termínů</div>
+        <div class="card-body" style="padding:0">
+            <div class="tl" id="tl-preview"></div>
+        </div>
+        <!-- Actual response dates -->
+        <div class="fb-inputs">
+            <div class="fb-inputs-title">Skutečná data odpovědi klienta — vyplnit až přijde odpověď</div>
+            <div class="fb-grid">
+                <div class="field">
+                    <label>Feedback — skutečná odpověď</label>
+                    <input type="date" id="fb-actual-0" onchange="updatePreview()">
+                </div>
+                <div class="field">
+                    <label>Korektura 1 — skutečná odpověď</label>
+                    <input type="date" id="fb-actual-1" onchange="updatePreview()">
+                </div>
+                <div class="field">
+                    <label>Korektura 2 — skutečná odpověď</label>
+                    <input type="date" id="fb-actual-2" onchange="updatePreview()">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Advanced / edit phases -->
+    <div class="card">
+        <div class="card-head">
+            Fáze projektu
+            <button class="adv-toggle" onclick="toggleAdv()">Upravit délku fází</button>
+        </div>
+        <div class="card-body">
+            <div style="font-size:13px;color:var(--muted)">
+                Standardní 60-denní struktura DigiDay. Délku fází lze upravit kliknutím na "Upravit délku fází".
+            </div>
+            <div class="adv-section" id="adv-section">
+                <div style="margin-bottom:10px"></div>
+                <div id="phases-list"></div>
+                <button class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="addPhase()">+ Přidat fázi</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom-bar">
+        <button class="btn btn-cta" onclick="generate()">Generovat harmonogram →</button>
+        <button class="btn btn-ghost" onclick="generatePreview()">Náhled pro klienta</button>
+        <button class="btn btn-ghost" onclick="resetAll()">Resetovat</button>
+    </div>
+</div>
+
+<!-- OUTPUT -->
+<div id="output" class="container">
+    <div class="bottom-bar no-print" style="margin-bottom:16px">
+        <button class="btn btn-ghost" onclick="backToEdit()">← Zpět na formulář</button>
+        <button class="btn btn-primary" onclick="window.print()">Tisk / PDF</button>
+    </div>
+    <div class="doc" id="doc-content"></div>
+</div>
+
+<script>
+'use strict';
+
+const TEMPLATE = [
+    { name: 'Vývoj a implementace',                              days: 15, feedback: true,  fbDays: 4,  fbLabel: 'Feedback klienta' },
+    { name: 'Zapracování feedbacku',                             days: 12, feedback: true,  fbDays: 4,  fbLabel: 'Korektura 1' },
+    { name: 'Zapracování korekce 1',                             days: 10, feedback: true,  fbDays: 4,  fbLabel: 'Korektura 2' },
+    { name: 'Finalizace, migrace obsahu, školení a předání',     days: 11, feedback: false, fbDays: 0,  fbLabel: '' },
+];
+
+let phases = [];
+let uid = 0;
+
+function mkPhase(tpl) {
+    return { id: ++uid, name: tpl.name, days: tpl.days, feedback: tpl.feedback, fbDays: tpl.fbDays, fbLabel: tpl.fbLabel, fbActual: '' };
+}
+
+// ── init ──────────────────────────────────────────────
+(function init() {
+    const today = new Date();
+    document.getElementById('f-start').value = iso(today);
+    document.getElementById('f-end').value = iso(addDays(today, 59));
+    phases = TEMPLATE.map(mkPhase);
+    renderPhases();
+    updatePreview();
+})();
+
+function onSigningDateChange() {
+    const d = parse(document.getElementById('f-start').value);
+    if (d) document.getElementById('f-end').value = iso(addDays(d, 59));
+    updatePreview();
+}
+
+// ── dates ─────────────────────────────────────────────
+function iso(d) { return d.toISOString().split('T')[0]; }
+function parse(s) { if (!s) return null; const d = new Date(s + 'T00:00:00'); return isNaN(d) ? null : d; }
+function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate() + n); return r; }
+function diffDays(a, b) { return Math.round((b - a) / 86400000); }
+function fmt(d) { return d ? d.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'numeric', year: 'numeric' }) : '—'; }
+function dayNum(start, d) { return diffDays(start, d) + 1; }
+
+// ── schedule calc ─────────────────────────────────────
+function calcSchedule() {
+    const startDate = parse(document.getElementById('f-start').value);
+    const plannedEnd = parse(document.getElementById('f-end').value);
+    if (!startDate || !plannedEnd) return null;
+
+    let cursor = new Date(startDate);
+    let totalDelay = 0;
+    const result = [];
+    let fbIdx = 0;
+
+    phases.forEach(p => {
+        const phStart = new Date(cursor);
+        const phEnd = addDays(phStart, p.days - 1);
+        let fb = null;
+
+        if (p.feedback) {
+            const fbSent = new Date(phEnd);
+            const fbDeadline = addDays(fbSent, p.fbDays);
+            const actualVal = document.getElementById('fb-actual-' + fbIdx)?.value || p.fbActual || '';
+            const fbActual = parse(actualVal);
+            let delay = 0;
+            if (fbActual && fbActual > fbDeadline) {
+                delay = diffDays(fbDeadline, fbActual);
+            }
+            totalDelay += delay;
+            cursor = addDays(fbActual !== null ? fbActual : fbDeadline, 1);
+            fb = { sent: fbSent, deadline: fbDeadline, actual: fbActual, delay, label: p.fbLabel || ('Korektura ' + (fbIdx + 1)) };
+            fbIdx++;
+        } else {
+            cursor = addDays(phEnd, 1);
+        }
+
+        result.push({ ...p, phStart, phEnd, fb });
+    });
+
+    return { startDate, plannedEnd, revisedEnd: addDays(plannedEnd, totalDelay), totalDelay, phases: result };
+}
+
+// ── live preview in form ───────────────────────────────
+function updatePreview() {
+    const s = calcSchedule();
+    const container = document.getElementById('tl-preview');
+    if (!s) { container.innerHTML = '<div style="padding:16px;color:var(--muted);font-size:13px">Zadejte datum podpisu smlouvy.</div>'; return; }
+
+    let html = '';
+    s.phases.forEach((p, i) => {
+        const isLast = i === s.phases.length - 1;
+        html += `<div class="tl-row${isLast ? ' tl-final' : ''}">
+            <div class="tl-dot"><div class="tl-dot-circle"></div><div class="tl-dot-line"></div></div>
+            <div class="tl-content">
+                <div class="tl-label">${esc(p.name)}</div>
+                <div class="tl-meta">${p.days} dní &middot; Den ${dayNum(s.startDate, p.phStart)}&ndash;${dayNum(s.startDate, p.phEnd)}</div>
+            </div>
+            <div class="tl-date">${fmt(p.phEnd)}</div>
+        </div>`;
+
+        if (p.fb) {
+            const { sent, deadline, actual, delay, label } = p.fb;
+            const statusHtml = actual
+                ? (delay > 0 ? `<span style="color:#b91c1c;font-weight:600">+${delay} dní zpoždění</span>` : `<span style="color:#15803d;font-weight:600">Včas</span>`)
+                : `<span style="color:#64748b">Čekáme na odpověď</span>`;
+            html += `<div class="tl-row tl-client">
+                <div class="tl-dot"><div class="tl-dot-circle"></div><div class="tl-dot-line"></div></div>
+                <div class="tl-content">
+                    <div class="tl-label">${esc(label)} — klient</div>
+                    <div class="tl-meta">Termín odpovědi: <strong>${fmt(deadline)}</strong> (${p.fbDays} dní) &middot; ${statusHtml}</div>
+                </div>
+                <div class="tl-date">${fmt(sent)}</div>
+            </div>`;
+        }
+    });
+    container.innerHTML = html;
+}
+
+// ── advanced phases editor ─────────────────────────────
+function toggleAdv() {
+    const el = document.getElementById('adv-section');
+    el.classList.toggle('open');
+}
+
+function renderPhases() {
+    const list = document.getElementById('phases-list');
+    list.innerHTML = '';
+    phases.forEach((p, i) => {
+        const div = document.createElement('div');
+        div.className = 'phase-item';
+        div.innerHTML = phaseHTML(p, i + 1);
+        list.appendChild(div);
+    });
+}
+
+function phaseHTML(p, num) {
+    return `
+        <div class="phase-head">
+            <div class="phase-num">${num}</div>
+            <input class="phase-name-input" type="text" value="${esc(p.name)}" placeholder="Název fáze"
+                   oninput="saveField(${p.id},'name',this.value); updatePreview()">
+            ${phases.length > 1 ? `<button class="btn btn-danger btn-sm" onclick="removePhase(${p.id})">×</button>` : ''}
+        </div>
+        <div class="phase-body">
+            <div class="g3" style="align-items:flex-end">
+                <div class="field">
+                    <label>Délka (dní)</label>
+                    <input type="number" min="1" value="${p.days}" oninput="saveField(${p.id},'days',+this.value||1); updatePreview()">
+                </div>
+                <div class="field" style="grid-column:2/-1">
+                    <label class="chk-label">
+                        <input type="checkbox" ${p.feedback ? 'checked' : ''} onchange="toggleFeedback(${p.id},this.checked)">
+                        Následuje korekturní kolo
+                    </label>
+                </div>
+            </div>
+            <div id="fb-block-${p.id}" style="display:${p.feedback ? 'block' : 'none'};margin-top:10px">
+                <div class="fb-block">
+                    <div class="fb-title">Korekturní kolo</div>
+                    <div class="g2">
+                        <div class="field">
+                            <label>Lhůta pro klienta (dní)</label>
+                            <input type="number" min="1" value="${p.fbDays}" oninput="saveField(${p.id},'fbDays',+this.value||1); updatePreview()">
+                        </div>
+                        <div class="field">
+                            <label>Označení kola</label>
+                            <input type="text" value="${esc(p.fbLabel)}" placeholder="např. Feedback klienta" oninput="saveField(${p.id},'fbLabel',this.value); updatePreview()">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function saveField(id, key, val) {
+    const p = phases.find(p => p.id === id);
+    if (p) p[key] = val;
+}
+
+function toggleFeedback(id, checked) {
+    const p = phases.find(p => p.id === id);
+    if (p) p.feedback = checked;
+    const el = document.getElementById('fb-block-' + id);
+    if (el) el.style.display = checked ? 'block' : 'none';
+    updatePreview();
+}
+
+function addPhase() {
+    phases.push({ id: ++uid, name: 'Nová fáze', days: 7, feedback: false, fbDays: 4, fbLabel: '', fbActual: '' });
+    renderPhases();
+    updatePreview();
+}
+
+function removePhase(id) {
+    phases = phases.filter(p => p.id !== id);
+    renderPhases();
+    updatePreview();
+}
+
+// ── generate document ──────────────────────────────────
+function generate() {
+    const name   = document.getElementById('f-name').value.trim()   || 'Projekt';
+    const client = document.getElementById('f-client').value.trim() || 'Klient';
+    const note   = document.getElementById('f-note').value.trim();
+
+    const s = calcSchedule();
+    if (!s) { alert('Vyplňte datum podpisu smlouvy.'); return; }
+
+    const today = new Date();
+    const hasDelay = s.totalDelay > 0;
+
+    let rows = '';
+    s.phases.forEach((p, i) => {
+        const isLast = i === s.phases.length - 1;
+        const typeChip = isLast ? 'chip-final' : 'chip-phase';
+        rows += `<tr class="row-phase">
+            <td><span class="chip ${typeChip}">Fáze ${i+1}</span></td>
+            <td><strong>${esc(p.name)}</strong></td>
+            <td><strong>${fmt(p.phEnd)}</strong></td>
+            <td>${p.days}&nbsp;dní</td>
+        </tr>`;
+
+        if (p.fb) {
+            const { sent, deadline, actual, delay, label } = p.fb;
+            const fbIdx = label.includes('Korektura 1') ? 'chip-k1' : label.includes('Korektura 2') ? 'chip-k2' : 'chip-fb';
+            const statusChip = actual
+                ? (delay > 0 ? `<span class="chip chip-delay">+${delay}&nbsp;dní zpoždění</span>` : `<span class="chip chip-ok">Včas</span>`)
+                : `<span class="chip chip-wait">Čekáme na odpověď</span>`;
+
+            rows += `<tr class="row-fb">
+                <td><span class="chip ${fbIdx}">${esc(label)}</span></td>
+                <td>Předání klientovi &rarr; termín odpovědi klienta</td>
+                <td><strong>${fmt(deadline)}</strong></td>
+                <td>${p.fbDays}&nbsp;dní</td>
+            </tr>`;
+
+            if (actual) {
+                rows += `<tr class="row-resp">
+                    <td></td>
+                    <td>Odpověď klienta přijata</td>
+                    <td>${fmt(actual)}</td>
+                    <td>${delay > 0 ? `+${delay}&nbsp;dní zpoždění` : '—'}</td>
+                </tr>`;
+            }
+        }
+    });
+
+    const condNote = note ? `<p style="margin-top:10px;padding-top:10px;border-top:1px solid #e2e8f0"><em>${esc(note)}</em></p>` : '';
+    const version = hasDelay ? 'Revidovaná' : 'Původní';
+
+    document.getElementById('doc-content').innerHTML = `
+        <div class="doc-top">
+            <div class="doc-brand">DigiDay s.r.o.</div>
+            <div class="doc-label">Harmonogram projektu</div>
+            <div class="doc-project">${esc(name)}</div>
+            <div class="doc-client">${esc(client)}</div>
+        </div>
+        <div class="doc-metabar">
+            <div class="doc-metacell">
+                <div class="lbl">Podpis smlouvy</div>
+                <div class="val">${fmt(s.startDate)}</div>
+            </div>
+            <div class="doc-metacell">
+                <div class="lbl">Datum vytvoření</div>
+                <div class="val">${fmt(today)}</div>
+            </div>
+            <div class="doc-metacell">
+                <div class="lbl">Verze</div>
+                <div class="val">${version}</div>
+            </div>
+            <div class="doc-metacell">
+                <div class="lbl">Zpoždění klienta</div>
+                <div class="val" style="color:${hasDelay ? '#b91c1c' : '#15803d'}">${hasDelay ? '+'+s.totalDelay+' dní' : '0 dní'}</div>
+            </div>
+        </div>
+        <div class="doc-body">
+            <div class="sec">
+                <div class="sec-title">Termíny projektu</div>
+                <div class="terminy">
+                    <div class="termin-box">
+                        <div class="lbl">Podpis smlouvy</div>
+                        <div class="val">${fmt(s.startDate)}</div>
+                    </div>
+                    <div class="termin-box">
+                        <div class="lbl">Původní termín odevzdání</div>
+                        <div class="val">${fmt(s.plannedEnd)}</div>
+                    </div>
+                    <div class="termin-box ${hasDelay ? 'red' : 'green'}">
+                        <div class="lbl">Revidovaný termín odevzdání</div>
+                        <div class="val">${fmt(s.revisedEnd)}${hasDelay ? '<br><small style="font-size:11px;font-weight:400">zpoždění klienta: +'+s.totalDelay+' dní</small>' : ''}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="sec">
+                <div class="sec-title">Podrobný harmonogram</div>
+                <table class="doc-table">
+                    <thead>
+                        <tr>
+                            <th>Typ</th>
+                            <th>Popis</th>
+                            <th>Termín</th>
+                            <th>Délka</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            </div>
+            <div class="sec">
+                <div class="sec-title">Podmínky harmonogramu</div>
+                <div class="cond-box">
+                    <p>Termín odevzdání díla se <strong>automaticky prodlužuje o dobu zpoždění zpětné vazby</strong> ze strany objednatele nad rámec stanovených lhůt.</p>
+                    <p>Objednatel je povinen poskytnout zpětnou vazbu v plném rozsahu v rámci stanovené lhůty. Zapracování každého kola korekcí začíná až po doručení <strong>kompletní</strong> zpětné vazby za dané kolo.</p>
+                    <p>V případě zpoždění objednatele se zpětnou vazbou není zhotovitel (DigiDay s.r.o.) v prodlení s dodáním díla. Revidovaný termín odevzdání se posouvá o příslušný počet dní zpoždění.</p>
+                    ${condNote}
+                </div>
+            </div>
+            <div class="sig-grid">
+                <div class="sig-box">
+                    <div class="sig-name">Za zhotovitele</div>
+                    DigiDay s.r.o.<br><br><br>
+                    Datum: _____________________
+                </div>
+                <div class="sig-box">
+                    <div class="sig-name">Za objednatele</div>
+                    ${esc(client)}<br><br><br>
+                    Datum: _____________________
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('generator').style.display = 'none';
+    document.getElementById('output').style.display = 'block';
+    window.scrollTo(0, 0);
+}
+
+// ── preview (relative days, no signing date needed) ────
+function calcPreviewSchedule() {
+    let day = 1;
+    const result = [];
+    phases.forEach(p => {
+        const phEndDay = day + p.days - 1;
+        let fb = null;
+        if (p.feedback) {
+            const fbDeadlineDay = phEndDay + p.fbDays;
+            fb = { deadlineDay: fbDeadlineDay, label: p.fbLabel || 'Korektura' };
+            day = fbDeadlineDay + 1;
+        } else {
+            day = phEndDay + 1;
+        }
+        result.push({ ...p, phEndDay, fb });
+    });
+    return { totalDays: day - 1, phases: result };
+}
+
+function generatePreview() {
+    const name   = document.getElementById('f-name').value.trim()   || 'Projekt';
+    const client = document.getElementById('f-client').value.trim() || 'Klient';
+    const note   = document.getElementById('f-note').value.trim();
+    const s = calcPreviewSchedule();
+    const today = new Date();
+
+    let rows = '';
+    s.phases.forEach((p, i) => {
+        const isLast = i === s.phases.length - 1;
+        const typeChip = isLast ? 'chip-final' : 'chip-phase';
+        rows += `<tr class="row-phase">
+            <td><span class="chip ${typeChip}">Fáze ${i+1}</span></td>
+            <td><strong>${esc(p.name)}</strong></td>
+            <td><strong>${p.phEndDay} dní od podpisu smlouvy</strong></td>
+            <td>${p.days}&nbsp;dní</td>
+        </tr>`;
+        if (p.fb) {
+            const chipClass = p.fb.label.includes('Korektura 1') ? 'chip-k1' : p.fb.label.includes('Korektura 2') ? 'chip-k2' : 'chip-fb';
+            rows += `<tr class="row-fb">
+                <td><span class="chip ${chipClass}">${esc(p.fb.label)}</span></td>
+                <td>Předání klientovi &rarr; termín odpovědi klienta</td>
+                <td><strong>${p.fb.deadlineDay} dní od podpisu smlouvy</strong></td>
+                <td>${p.fbDays}&nbsp;dní</td>
+            </tr>`;
+        }
+    });
+
+    const condNote = note ? `<p style="margin-top:10px;padding-top:10px;border-top:1px solid #e2e8f0"><em>${esc(note)}</em></p>` : '';
+
+    document.getElementById('doc-content').innerHTML = `
+        <div class="doc-top">
+            <div class="doc-brand">DigiDay s.r.o.</div>
+            <div class="doc-label">Harmonogram projektu — Náhled před podpisem</div>
+            <div class="doc-project">${esc(name)}</div>
+            <div class="doc-client">${esc(client)}</div>
+        </div>
+        <div class="doc-metabar">
+            <div class="doc-metacell">
+                <div class="lbl">Datum vytvoření</div>
+                <div class="val">${fmt(today)}</div>
+            </div>
+            <div class="doc-metacell">
+                <div class="lbl">Celková délka projektu</div>
+                <div class="val">${s.totalDays} dní</div>
+            </div>
+            <div class="doc-metacell">
+                <div class="lbl">Verze</div>
+                <div class="val">Náhled</div>
+            </div>
+            <div class="doc-metacell">
+                <div class="lbl">Termíny</div>
+                <div class="val" style="font-weight:400;font-size:12px;color:var(--muted)">Doplní se po podpisu smlouvy</div>
+            </div>
+        </div>
+        <div class="doc-body">
+            <div class="sec">
+                <div class="sec-title">Termíny projektu</div>
+                <div class="terminy">
+                    <div class="termin-box">
+                        <div class="lbl">Začátek</div>
+                        <div class="val" style="font-size:14px">Den podpisu smlouvy</div>
+                    </div>
+                    <div class="termin-box">
+                        <div class="lbl">Celková délka</div>
+                        <div class="val">${s.totalDays} dní</div>
+                    </div>
+                    <div class="termin-box green">
+                        <div class="lbl">Termín odevzdání</div>
+                        <div class="val" style="font-size:14px">${s.totalDays} dní od podpisu</div>
+                    </div>
+                </div>
+            </div>
+            <div class="sec">
+                <div class="sec-title">Podrobný harmonogram</div>
+                <table class="doc-table">
+                    <thead>
+                        <tr>
+                            <th>Typ</th>
+                            <th>Popis</th>
+                            <th>Termín</th>
+                            <th>Délka</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            </div>
+            <div class="sec">
+                <div class="sec-title">Podmínky harmonogramu</div>
+                <div class="cond-box">
+                    <p>Termín odevzdání díla se <strong>automaticky prodlužuje o dobu zpoždění zpětné vazby</strong> ze strany objednatele nad rámec stanovených lhůt.</p>
+                    <p>Objednatel je povinen poskytnout zpětnou vazbu v plném rozsahu v rámci stanovené lhůty. Zapracování každého kola korekcí začíná až po doručení <strong>kompletní</strong> zpětné vazby za dané kolo.</p>
+                    <p>V případě zpoždění objednatele se zpětnou vazbou není zhotovitel (DigiDay s.r.o.) v prodlení s dodáním díla.</p>
+                    ${condNote}
+                </div>
+            </div>
+            <div class="sig-grid">
+                <div class="sig-box">
+                    <div class="sig-name">Za zhotovitele</div>
+                    DigiDay s.r.o.<br><br><br>
+                    Datum: _____________________
+                </div>
+                <div class="sig-box">
+                    <div class="sig-name">Za objednatele</div>
+                    ${esc(client)}<br><br><br>
+                    Datum: _____________________
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('generator').style.display = 'none';
+    document.getElementById('output').style.display = 'block';
+    window.scrollTo(0, 0);
+}
+
+function backToEdit() {
+    document.getElementById('output').style.display = 'none';
+    document.getElementById('generator').style.display = 'block';
+}
+
+function resetAll() {
+    if (!confirm('Opravdu chcete resetovat?')) return;
+    uid = 0;
+    document.getElementById('f-name').value = '';
+    document.getElementById('f-client').value = '';
+    document.getElementById('f-note').value = '';
+    document.getElementById('fb-actual-0').value = '';
+    document.getElementById('fb-actual-1').value = '';
+    document.getElementById('fb-actual-2').value = '';
+    const today = new Date();
+    document.getElementById('f-start').value = iso(today);
+    document.getElementById('f-end').value = iso(addDays(today, 59));
+    phases = TEMPLATE.map(mkPhase);
+    renderPhases();
+    updatePreview();
+}
+
+function esc(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>
